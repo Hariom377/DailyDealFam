@@ -1,87 +1,87 @@
-name: Scheduled Telegram Affiliate Bot
-on:
-  schedule:
-    # 4 daily sessions with specific link counts
-    - cron: '42 4 * * *'   # 10:12 AM IST (4:42 UTC) - 3 links
-    - cron: '42 7 * * *'   # 1:12 PM IST (7:42 UTC) - 3 links  
-    - cron: '42 12 * * *'  # 6:12 PM IST (12:42 UTC) - 2 links
-    - cron: '42 15 * * *'  # 9:12 PM IST (15:42 UTC) - 2 links
-  # Allow manual trigger for testing
-  workflow_dispatch:
-    inputs:
-      session_type:
-        description: 'Session type'
-        required: true
-        default: 'morning'
-        type: choice
-        options:
-          - morning
-          - afternoon
-          - evening
-          - night
+# name: Scheduled Telegram Affiliate Bot
+# on:
+#   schedule:
+#     # 4 daily sessions with specific link counts
+#     - cron: '42 4 * * *'   # 10:12 AM IST (4:42 UTC) - 3 links
+#     - cron: '42 7 * * *'   # 1:12 PM IST (7:42 UTC) - 3 links  
+#     - cron: '42 12 * * *'  # 6:12 PM IST (12:42 UTC) - 2 links
+#     - cron: '42 15 * * *'  # 9:12 PM IST (15:42 UTC) - 2 links
+#   # Allow manual trigger for testing
+#   workflow_dispatch:
+#     inputs:
+#       session_type:
+#         description: 'Session type'
+#         required: true
+#         default: 'morning'
+#         type: choice
+#         options:
+#           - morning
+#           - afternoon
+#           - evening
+#           - night
 
-jobs:
-  run-affiliate-bot:
-    name: Run Scheduled Affiliate Bot Session
-    runs-on: ubuntu-latest
-    timeout-minutes: 25  # Extended timeout for link processing
+# jobs:
+#   run-affiliate-bot:
+#     name: Run Scheduled Affiliate Bot Session
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 25  # Extended timeout for link processing
     
-    steps:
-    - name: 📥 Checkout Repository
-      uses: actions/checkout@v4
+#     steps:
+#     - name: 📥 Checkout Repository
+#       uses: actions/checkout@v4
       
-    - name: 🐍 Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+#     - name: 🐍 Set up Python 3.11
+#       uses: actions/setup-python@v4
+#       with:
+#         python-version: '3.11'
         
-    - name: 📦 Install Dependencies
-      run: |
-        echo "Installing Python packages..."
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        echo "✅ Dependencies installed successfully"
+#     - name: 📦 Install Dependencies
+#       run: |
+#         echo "Installing Python packages..."
+#         python -m pip install --upgrade pip
+#         pip install -r requirements.txt
+#         echo "✅ Dependencies installed successfully"
         
-    - name: 🕐 Determine Session Type
-      id: session
-      run: |
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          echo "session_type=${{ github.event.inputs.session_type }}" >> $GITHUB_OUTPUT
-        else
-          # Determine session based on UTC time
-          hour=$(date -u +%H)
-          if [ $hour -eq 4 ]; then
-            echo "session_type=morning" >> $GITHUB_OUTPUT
-          elif [ $hour -eq 7 ]; then
-            echo "session_type=afternoon" >> $GITHUB_OUTPUT
-          elif [ $hour -eq 12 ]; then
-            echo "session_type=evening" >> $GITHUB_OUTPUT
-          elif [ $hour -eq 15 ]; then
-            echo "session_type=night" >> $GITHUB_OUTPUT
-          else
-            echo "session_type=morning" >> $GITHUB_OUTPUT
-          fi
-        fi
+#     - name: 🕐 Determine Session Type
+#       id: session
+#       run: |
+#         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+#           echo "session_type=${{ github.event.inputs.session_type }}" >> $GITHUB_OUTPUT
+#         else
+#           # Determine session based on UTC time
+#           hour=$(date -u +%H)
+#           if [ $hour -eq 4 ]; then
+#             echo "session_type=morning" >> $GITHUB_OUTPUT
+#           elif [ $hour -eq 7 ]; then
+#             echo "session_type=afternoon" >> $GITHUB_OUTPUT
+#           elif [ $hour -eq 12 ]; then
+#             echo "session_type=evening" >> $GITHUB_OUTPUT
+#           elif [ $hour -eq 15 ]; then
+#             echo "session_type=night" >> $GITHUB_OUTPUT
+#           else
+#             echo "session_type=morning" >> $GITHUB_OUTPUT
+#           fi
+#         fi
         
-    - name: 🤖 Run Scheduled Bot Session
-      env:
-        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-        CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
-        AMAZON_TAG: ${{ secrets.AMAZON_TAG }}
-        SESSION_TYPE: ${{ steps.session.outputs.session_type }}
-      run: |
-        echo "🚀 Starting ${{ steps.session.outputs.session_type }} session at $(date)"
-        echo "🇮🇳 Current IST time: $(TZ='Asia/Kolkata' date)"
+#     - name: 🤖 Run Scheduled Bot Session
+#       env:
+#         BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+#         CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+#         AMAZON_TAG: ${{ secrets.AMAZON_TAG }}
+#         SESSION_TYPE: ${{ steps.session.outputs.session_type }}
+#       run: |
+#         echo "🚀 Starting ${{ steps.session.outputs.session_type }} session at $(date)"
+#         echo "🇮🇳 Current IST time: $(TZ='Asia/Kolkata' date)"
         
-        python scheduled_bot.py
+#         python scheduled_bot.py
         
-        echo "✅ Bot session finished at $(date)"
-        echo "🇮🇳 End time IST: $(TZ='Asia/Kolkata' date)"
+#         echo "✅ Bot session finished at $(date)"
+#         echo "🇮🇳 End time IST: $(TZ='Asia/Kolkata' date)"
         
-    - name: 💾 Commit Progress Updates
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add data/
-        git diff --staged --quiet || git commit -m "Update progress: ${{ steps.session.outputs.session_type }} session completed"
-        git push
+#     - name: 💾 Commit Progress Updates
+#       run: |
+#         git config --local user.email "action@github.com"
+#         git config --local user.name "GitHub Action"
+#         git add data/
+#         git diff --staged --quiet || git commit -m "Update progress: ${{ steps.session.outputs.session_type }} session completed"
+#         git push
